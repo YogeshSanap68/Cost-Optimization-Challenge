@@ -1,1 +1,8 @@
-{ "name": "function-app", "version": "1.0.0" }
+{
+  "name": "cosmos-archiver",
+  "version": "1.0.0",
+  "dependencies": {
+    "@azure/cosmos": "^4.0.0",
+    "@azure/storage-blob": "^12.0.0"
+  }
+}
