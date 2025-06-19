@@ -1,4 +1,3 @@
-// Azure Function code placeholder
 const { CosmosClient } = require("@azure/cosmos");
 const { BlobServiceClient } = require("@azure/storage-blob");
 
@@ -10,27 +9,42 @@ const CONTAINER_ID = "Billing";
 const BLOB_CONTAINER = "billing-archive";
 
 module.exports = async function (context, myTimer) {
-  const cutoffDate = new Date();
-  cutoffDate.setMonth(cutoffDate.getMonth() - 3);
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - 3);
 
-  const container = cosmos.database(DATABASE_ID).container(CONTAINER_ID);
-  const blobContainer = blobService.getContainerClient(BLOB_CONTAINER);
-  await blobContainer.createIfNotExists();
+    const cosmosContainer = cosmos.database(DATABASE_ID).container(CONTAINER_ID);
+    const blobContainerClient = blobService.getContainerClient(BLOB_CONTAINER);
+    await blobContainerClient.createIfNotExists();
 
-  const query = {
-    query: "SELECT * FROM c WHERE c.timestamp < @cutoff",
-    parameters: [{ name: "@cutoff", value: cutoffDate.toISOString() }],
-  };
+    const query = {
+        query: "SELECT * FROM c WHERE c.timestamp < @cutoff",
+        parameters: [{ name: "@cutoff", value: cutoffDate.toISOString() }]
+    };
 
-  const { resources: oldRecords } = await container.items.query(query).fetchAll();
+    const { resources: oldRecords } = await cosmosContainer.items.query(query).fetchAll();
 
-  for (const record of oldRecords) {
-    const date = new Date(record.timestamp);
-    const path = `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${record.id}.json`;
-    const blobClient = blobContainer.getBlockBlobClient(path);
-    const data = JSON.stringify(record);
+    context.log(`Found ${oldRecords.length} records older than 3 months`);
 
-    await blobClient.upload(data, Buffer.byteLength(data));
-    await container.item(record.id, record.id).delete();
-  }
+    for (const record of oldRecords) {
+        try {
+            const date = new Date(record.timestamp);
+            const path = `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${record.id}.json`;
+
+            const blobClient = blobContainerClient.getBlockBlobClient(path);
+            const data = JSON.stringify(record);
+            await blobClient.upload(data, Buffer.byteLength(data));
+
+            // Verify upload (optional)
+            const exists = await blobClient.exists();
+            if (exists) {
+                await cosmosContainer.item(record.id, record.id).delete();
+                context.log(`Archived & deleted: ${record.id}`);
+            } else {
+                context.log.warn(`Upload failed for: ${record.id}`);
+            }
+
+        } catch (error) {
+            context.log.error(`Error processing record ${record.id}:`, error);
+        }
+    }
 };
