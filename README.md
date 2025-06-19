@@ -1,3 +1,3 @@
-# Function App
+# Infra Setup
 
-This handles archival logic.
+This folder contains infrastructure code.
