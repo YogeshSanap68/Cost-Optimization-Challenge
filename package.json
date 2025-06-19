@@ -1,8 +1,19 @@
 {
-  "name": "cosmos-archiver",
+  "name": "cosmos-blob-archiver",
   "version": "1.0.0",
+  "description": "Azure Function to archive old Cosmos DB records to Azure Blob Storage.",
+  "main": "index.js",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
   "dependencies": {
     "@azure/cosmos": "^4.0.0",
-    "@azure/storage-blob": "^12.0.0"
-  }
+    "@azure/storage-blob": "^12.17.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "Yogesh Sanap",
+  "license": "MIT"
 }
