@@ -1,3 +1,3 @@
-# Azure Billing Archival Solution
+# Function App
 
-See `docs/` for architecture and implementation details.
+This handles archival logic.
